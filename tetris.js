@@ -1,18 +1,48 @@
 const canvas = document.getElementById('tetris');
 const context = canvas.getContext('2d');
 const scale = 20;
-let dropCounter = 0;
 const dropInterval = 1000; // 1 second
+let dropCounter = 0;
 let lastTime = 0;
+const pieces = ['I','L','J','O','T','S','Z'];
+let initialBag = createBag();
+let initialPiece = createPiece(pieces[pieces.length * Math.random() | 0])
 
 context.scale(scale, scale);
 
+const arena = createMatrix(12, 20);
 
 const player = {
-	matrix: createPiece('L'),
+	matrix: initialPiece,
 	pos: {x: 5, y: 0}
 }
-const arena = createMatrix(12, 20);
+
+update();
+
+document.addEventListener('keydown', event => {
+	switch (event.keyCode) {
+		case 37: // left arrow
+			playerMove(-1)
+			break;
+		case 39: // right arrow
+			playerMove(1)
+			break;
+		case 40: // down arrow
+			playerDrop();
+			break;
+			case 90: // z
+			// rotate left
+			playerRotate(-1)
+			break;
+		case 38: // spacebar
+			playerRotate(1);
+			break;
+		case 67: // c
+			// rotate right
+			playerRotate(1)
+			break;
+	}
+})
 
 function createMatrix(width, height) {
 	const matrix = [];
@@ -137,25 +167,37 @@ function update(time = 0) {
 	requestAnimationFrame(update);
 }
 
-function playerReset() {
-	const pieces = 'ILJOTSZ';
-	// const pieces = ['I','L','J','O','T','S','Z'];
-	// let bag = pieces.map(piece => {
-	// 	createPiece(piece);
-	// })
-	// console.log(bag);
-	// console.log(pieces.length * Math.random() | 0);
-	player.matrix = createPiece(pieces[pieces.length * Math.random() | 0])
+function createBag() {
+	const bag = pieces.map(piece => {
+		return createPiece(piece);
+	})
+	return shuffle(bag);
+}
+
+function shuffle(array) {
+  return array.sort(() => Math.random() - 0.5);
+}
+
+function playerReset(bag) {
+	if (!bag) {
+		bag = createBag();
+		shuffle(bag);
+	}
+	player.matrix = bag[0];
 	player.pos.y = 0;
 	player.pos.x = (arena[0].length / 2 | 0) - (player.matrix[0].length / 2 | 0);
 }
 
 function playerDrop() {
 	player.pos.y++;
+	if (initialBag == 0) {
+		initialBag = createBag();
+	}
 	if (collide(arena, player)) {
 		player.pos.y--;
 		merge(arena, player);
-		playerReset();
+		playerReset(initialBag);
+		initialBag.splice(0, 1);
 	}
 	dropCounter = 0; // reset dropCounter
 }
@@ -203,30 +245,3 @@ function rotate(matrix, dir) {
 		matrix.reverse();
 	}
 }
-
-document.addEventListener('keydown', event => {
-	switch (event.keyCode) {
-		case 37: // left arrow
-			playerMove(-1)
-			break;
-		case 39: // right arrow
-			playerMove(1)
-			break;
-		case 40: // down arrow
-			playerDrop();
-			break;
-			case 90: // z
-			// rotate left
-			playerRotate(-1)
-			break;
-		case 38: // spacebar
-			playerRotate(1);
-			break;
-		case 67: // c
-			// rotate right
-			playerRotate(1)
-			break;
-	}
-})
-
-update();
